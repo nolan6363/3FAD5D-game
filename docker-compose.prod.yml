@@ -1,0 +1,21 @@
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: jeece_3fad5d_nginx
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.jeece-3fad5d.rule=${TRAEFIK_RULE}"
+      - traefik.http.routers.jeece-3fad5d.entrypoints=websecure
+      - traefik.http.routers.jeece-3fad5d.tls=true
+      - traefik.http.routers.jeece-3fad5d.tls.certresolver=letsencrypt
+      - traefik.http.services.jeece-3fad5d.loadbalancer.server.port=80
+      - traefik.docker.network=homelab
+    networks:
+      - homelab
+
+networks:
+  homelab:
+    external: true

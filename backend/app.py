@@ -78,15 +78,21 @@ def teams():
 @app.route('/api/teams', methods=['PATCH'])
 def update_teams():
     data = request.json or {}
-    t1 = data.get('team_1', '').strip()
-    t2 = data.get('team_2', '').strip()
-    if not t1 or not t2:
+    t1_new = data.get('team_1', '').strip()
+    t2_new = data.get('team_2', '').strip()
+    if not t1_new or not t2_new:
         return jsonify({'error': 'Missing team names'}), 400
+
+    t1_old, t2_old = get_team_names()
     with get_db() as conn:
-        conn.execute('UPDATE config SET value = ? WHERE key = "team_1"', (t1,))
-        conn.execute('UPDATE config SET value = ? WHERE key = "team_2"', (t2,))
+        conn.execute('UPDATE config SET value = ? WHERE key = "team_1"', (t1_new,))
+        conn.execute('UPDATE config SET value = ? WHERE key = "team_2"', (t2_new,))
+        if t1_old != t1_new:
+            conn.execute('UPDATE results SET team = ? WHERE team = ?', (t1_new, t1_old))
+        if t2_old != t2_new:
+            conn.execute('UPDATE results SET team = ? WHERE team = ?', (t2_new, t2_old))
         conn.commit()
-    return jsonify({'teams': [t1, t2]})
+    return jsonify({'teams': [t1_new, t2_new]})
 
 
 @app.route('/api/results', methods=['GET'])

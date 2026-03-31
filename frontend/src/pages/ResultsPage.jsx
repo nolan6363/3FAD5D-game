@@ -6,9 +6,13 @@ export default function ResultsPage({ player1, player2, onReplay, onLeaderboard 
   const bar1Ref = useRef(null)
   const bar2Ref = useRef(null)
   const [saveStatus, setSaveStatus] = useState('saving') // 'saving' | 'saved' | 'error'
+  const savedRef = useRef(false)
 
-  // Sauvegarde auto des deux résultats
+  // Sauvegarde auto des deux résultats (ref guard contre le double-appel StrictMode)
   useEffect(() => {
+    if (savedRef.current) return
+    savedRef.current = true
+
     async function save() {
       try {
         await Promise.all([

@@ -40,7 +40,6 @@ def init_db():
                 value TEXT NOT NULL
             )
         ''')
-        # Valeurs par défaut depuis les variables d'environnement
         conn.execute(
             'INSERT OR IGNORE INTO config (key, value) VALUES (?, ?)', ('team_1', TEAM_1)
         )
@@ -52,7 +51,9 @@ def init_db():
 
 def get_team_names():
     with get_db() as conn:
-        rows = conn.execute('SELECT key, value FROM config WHERE key IN ("team_1", "team_2")').fetchall()
+        rows = conn.execute(
+            'SELECT key, value FROM config WHERE key IN ("team_1", "team_2")'
+        ).fetchall()
     cfg = {r['key']: r['value'] for r in rows}
     return cfg.get('team_1', TEAM_1), cfg.get('team_2', TEAM_2)
 
@@ -63,18 +64,18 @@ with app.app_context():
 
 # ── Routes ──────────────────────────────────────────────────────────────────
 
-@app.get('/api/health')
+@app.route('/api/health', methods=['GET'])
 def health():
     return jsonify({'status': 'ok'})
 
 
-@app.get('/api/teams')
+@app.route('/api/teams', methods=['GET'])
 def teams():
     t1, t2 = get_team_names()
     return jsonify({'teams': [t1, t2]})
 
 
-@app.patch('/api/teams')
+@app.route('/api/teams', methods=['PATCH'])
 def update_teams():
     data = request.json or {}
     t1 = data.get('team_1', '').strip()
@@ -88,7 +89,7 @@ def update_teams():
     return jsonify({'teams': [t1, t2]})
 
 
-@app.get('/api/results')
+@app.route('/api/results', methods=['GET'])
 def get_results():
     with get_db() as conn:
         rows = conn.execute(
@@ -97,7 +98,7 @@ def get_results():
     return jsonify([dict(r) for r in rows])
 
 
-@app.post('/api/results')
+@app.route('/api/results', methods=['POST'])
 def post_result():
     data = request.json or {}
     if not all(k in data for k in ('name', 'team', 'score', 'hex')):
@@ -117,7 +118,7 @@ def post_result():
     return jsonify(dict(row)), 201
 
 
-@app.patch('/api/results/<int:result_id>/toggle')
+@app.route('/api/results/<int:result_id>/toggle', methods=['PATCH'])
 def toggle_result(result_id):
     with get_db() as conn:
         row = conn.execute(
@@ -136,7 +137,7 @@ def toggle_result(result_id):
     return jsonify(dict(updated))
 
 
-@app.get('/api/leaderboard')
+@app.route('/api/leaderboard', methods=['GET'])
 def leaderboard():
     with get_db() as conn:
         rows = conn.execute(

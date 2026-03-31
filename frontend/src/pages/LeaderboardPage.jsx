@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { fetchLeaderboard, toggleResult } from '../api'
+import { fetchLeaderboard, toggleResult, updateTeams } from '../api'
 
 export default function LeaderboardPage({ onBack }) {
   const [data, setData] = useState(null)
@@ -21,6 +21,26 @@ export default function LeaderboardPage({ onBack }) {
 
   useEffect(() => { load() }, [load])
 
+  async function handleEditTeams() {
+    const pwd = window.prompt('Mot de passe admin :')
+    if (pwd === null) return
+    if (pwd !== 'JEECE@1986') {
+      window.alert('Mot de passe incorrect.')
+      return
+    }
+    const currentNames = data?.teams?.map(t => t.name) ?? ['Liste A', 'Liste B']
+    const name1 = window.prompt('Nom de la liste 1 :', currentNames[0])
+    if (!name1?.trim()) return
+    const name2 = window.prompt('Nom de la liste 2 :', currentNames[1])
+    if (!name2?.trim()) return
+    try {
+      await updateTeams(name1.trim(), name2.trim())
+      load()
+    } catch {
+      window.alert('Erreur lors de la mise à jour.')
+    }
+  }
+
   async function handleToggle(id) {
     try {
       const updated = await toggleResult(id)
@@ -40,9 +60,12 @@ export default function LeaderboardPage({ onBack }) {
       {/* Bouton retour */}
       <div className="lb-topbar">
         <button className="btn-back" onClick={onBack}>← Retour</button>
-        <button className="btn-refresh" onClick={load} disabled={loading}>
-          {loading ? '…' : '↺ Actualiser'}
-        </button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button className="btn-refresh" onClick={handleEditTeams}>✎ Listes</button>
+          <button className="btn-refresh" onClick={load} disabled={loading}>
+            {loading ? '…' : '↺'}
+          </button>
+        </div>
       </div>
 
       {error && (

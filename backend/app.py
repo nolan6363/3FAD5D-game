@@ -34,7 +34,27 @@ def init_db():
                 created_at TEXT    NOT NULL
             )
         ''')
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS config (
+                key   TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        ''')
+        # Valeurs par défaut depuis les variables d'environnement
+        conn.execute(
+            'INSERT OR IGNORE INTO config (key, value) VALUES (?, ?)', ('team_1', TEAM_1)
+        )
+        conn.execute(
+            'INSERT OR IGNORE INTO config (key, value) VALUES (?, ?)', ('team_2', TEAM_2)
+        )
         conn.commit()
+
+
+def get_team_names():
+    with get_db() as conn:
+        rows = conn.execute('SELECT key, value FROM config WHERE key IN ("team_1", "team_2")').fetchall()
+    cfg = {r['key']: r['value'] for r in rows}
+    return cfg.get('team_1', TEAM_1), cfg.get('team_2', TEAM_2)
 
 
 with app.app_context():
@@ -50,7 +70,22 @@ def health():
 
 @app.get('/api/teams')
 def teams():
-    return jsonify({'teams': [TEAM_1, TEAM_2]})
+    t1, t2 = get_team_names()
+    return jsonify({'teams': [t1, t2]})
+
+
+@app.patch('/api/teams')
+def update_teams():
+    data = request.json or {}
+    t1 = data.get('team_1', '').strip()
+    t2 = data.get('team_2', '').strip()
+    if not t1 or not t2:
+        return jsonify({'error': 'Missing team names'}), 400
+    with get_db() as conn:
+        conn.execute('UPDATE config SET value = ? WHERE key = "team_1"', (t1,))
+        conn.execute('UPDATE config SET value = ? WHERE key = "team_2"', (t2,))
+        conn.commit()
+    return jsonify({'teams': [t1, t2]})
 
 
 @app.get('/api/results')
@@ -111,8 +146,9 @@ def leaderboard():
     all_results = [dict(r) for r in rows]
     valid_results = [r for r in all_results if r['valid']]
 
+    t1, t2 = get_team_names()
     teams_data = []
-    for team_name in [TEAM_1, TEAM_2]:
+    for team_name in [t1, t2]:
         scores = [r['score'] for r in valid_results if r['team'] == team_name]
         teams_data.append({
             'name':    team_name,

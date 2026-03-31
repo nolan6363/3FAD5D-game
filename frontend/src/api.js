@@ -28,3 +28,13 @@ export async function toggleResult(id) {
   if (!res.ok) throw new Error('Impossible de modifier la tentative')
   return res.json()
 }
+
+export async function updateTeams(team1, team2) {
+  const res = await fetch(`${BASE}/teams`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ team_1: team1, team_2: team2 }),
+  })
+  if (!res.ok) throw new Error('Impossible de mettre à jour les listes')
+  return res.json()
+}

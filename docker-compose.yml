@@ -1,4 +1,20 @@
 services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/data
+    ports:
+      - "5000:5000"
+    environment:
+      DB_PATH: /data/results.db
+      TEAM_1_NAME: ${TEAM_1_NAME:-Liste A}
+      TEAM_2_NAME: ${TEAM_2_NAME:-Liste B}
+      FRONTEND_URL: http://localhost:5173
+    networks:
+      - jeece_3fad5d_network
+
   frontend:
     build:
       context: ./frontend
@@ -10,6 +26,8 @@ services:
       - "5173:5173"
     environment:
       NODE_ENV: development
+    depends_on:
+      - backend
     networks:
       - jeece_3fad5d_network
 

@@ -1,4 +1,4 @@
-export default function HomePage({ onStart }) {
+export default function HomePage({ onStart, onLeaderboard }) {
   return (
     <div className="home">
       <div className="home-hero">
@@ -49,6 +49,9 @@ export default function HomePage({ onStart }) {
 
       <button className="btn btn-primary" onClick={onStart}>
         Commencer le match
+      </button>
+      <button className="btn btn-secondary" onClick={onLeaderboard}>
+        Classement
       </button>
     </div>
   )

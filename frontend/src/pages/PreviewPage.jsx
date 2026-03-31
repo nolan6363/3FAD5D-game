@@ -3,10 +3,9 @@ import { scoreMessage, scoreColor } from '../utils/colorUtils'
 
 const TARGET_HEX = '#3FAD5D'
 
-export default function PreviewPage({ playerNum, result, onNext, nextLabel }) {
+export default function PreviewPage({ result, onNext, nextLabel }) {
   const barRef = useRef(null)
 
-  // Animation de la barre de score
   useEffect(() => {
     if (!barRef.current) return
     barRef.current.style.width = '0%'
@@ -55,7 +54,11 @@ export default function PreviewPage({ playerNum, result, onNext, nextLabel }) {
 
       {/* Score */}
       <div className="score-section">
-        <div className="score-label">Score — Candidat {playerNum}</div>
+        <div className="score-label">
+          {result.name
+            ? <><strong>{result.name}</strong> · <span style={{ color: '#3FAD5D' }}>{result.team}</span></>
+            : 'Score'}
+        </div>
         <div className="score-value" style={{ color }}>
           {result.score}<span>/100</span>
         </div>

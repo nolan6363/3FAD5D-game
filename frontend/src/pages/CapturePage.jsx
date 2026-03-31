@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { captureFromVideo } from '../utils/colorUtils'
 
-export default function CapturePage({ playerNum, onCapture }) {
+export default function CapturePage({ playerNum, playerName, onCapture }) {
   const videoRef = useRef(null)
   const [stream, setStream] = useState(null)
   const [ready, setReady] = useState(false)
@@ -106,7 +106,7 @@ export default function CapturePage({ playerNum, onCapture }) {
 
       <div className="camera-ui">
         <div className="camera-top-bar">
-          <div className="camera-player-badge">Candidat {playerNum}</div>
+          <div className="camera-player-badge">{playerName ?? `Candidat ${playerNum}`}</div>
         </div>
 
         <div className="camera-bottom-bar">

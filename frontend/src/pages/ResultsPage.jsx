@@ -1,9 +1,27 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { scoreColor } from '../utils/colorUtils'
+import { saveResult } from '../api'
 
-export default function ResultsPage({ player1, player2, onReplay }) {
+export default function ResultsPage({ player1, player2, onReplay, onLeaderboard }) {
   const bar1Ref = useRef(null)
   const bar2Ref = useRef(null)
+  const [saveStatus, setSaveStatus] = useState('saving') // 'saving' | 'saved' | 'error'
+
+  // Sauvegarde auto des deux résultats
+  useEffect(() => {
+    async function save() {
+      try {
+        await Promise.all([
+          saveResult({ name: player1.name, team: player1.team, score: player1.score, hex: player1.hex }),
+          saveResult({ name: player2.name, team: player2.team, score: player2.score, hex: player2.hex }),
+        ])
+        setSaveStatus('saved')
+      } catch {
+        setSaveStatus('error')
+      }
+    }
+    save()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (bar1Ref.current) bar1Ref.current.style.width = '0%'
@@ -16,9 +34,9 @@ export default function ResultsPage({ player1, player2, onReplay }) {
   }, [player1.score, player2.score])
 
   const isTie = player1.score === player2.score
-  const winner = isTie ? null : player1.score > player2.score ? 1 : 2
-  const p1Wins = winner === 1
-  const p2Wins = winner === 2
+  const winner = isTie ? null : player1.score > player2.score ? player1 : player2
+  const p1Wins = !isTie && player1.score > player2.score
+  const p2Wins = !isTie && player2.score > player1.score
 
   return (
     <div className="results-page">
@@ -26,34 +44,35 @@ export default function ResultsPage({ player1, player2, onReplay }) {
       <div className={`winner-banner${isTie ? ' tie' : ''}`}>
         <div className="winner-label">{isTie ? 'Résultat' : 'Vainqueur'}</div>
         <div className="winner-name">
-          {isTie ? 'Égalité !' : `Candidat ${winner}`}
+          {isTie ? 'Égalité !' : winner.name}
         </div>
-        <div className="winner-score">
-          {isTie
-            ? `${player1.score} pts chacun`
-            : `${winner === 1 ? player1.score : player2.score} pts`}
-        </div>
+        {!isTie && (
+          <div className="winner-score">{winner.team} · {winner.score} pts</div>
+        )}
+        {isTie && (
+          <div className="winner-score">{player1.score} pts chacun</div>
+        )}
       </div>
 
       {/* Cartes des deux joueurs */}
       <div className="players-grid">
-        <PlayerCard
-          num={1}
-          result={player1}
-          isWinner={p1Wins}
-          barRef={bar1Ref}
-        />
-        <PlayerCard
-          num={2}
-          result={player2}
-          isWinner={p2Wins}
-          barRef={bar2Ref}
-        />
+        <PlayerCard num={1} result={player1} isWinner={p1Wins} barRef={bar1Ref} />
+        <PlayerCard num={2} result={player2} isWinner={p2Wins} barRef={bar2Ref} />
+      </div>
+
+      {/* Statut sauvegarde */}
+      <div className={`save-status save-status-${saveStatus}`}>
+        {saveStatus === 'saving' && '⏳ Enregistrement…'}
+        {saveStatus === 'saved'  && '✓ Résultats enregistrés'}
+        {saveStatus === 'error'  && '⚠ Erreur d\'enregistrement'}
       </div>
 
       {/* Actions */}
       <div className="results-actions">
-        <button className="btn btn-primary" onClick={onReplay}>
+        <button className="btn btn-primary" onClick={onLeaderboard}>
+          Voir le classement
+        </button>
+        <button className="btn btn-secondary" onClick={onReplay}>
           Nouveau match
         </button>
       </div>
@@ -66,9 +85,8 @@ function PlayerCard({ num, result, isWinner, barRef }) {
 
   return (
     <div className={`player-result-card${isWinner ? ' winner-card' : ''}`}>
-      {/* Photo avec overlay cercle */}
       <div className="player-result-photo" style={{ position: 'relative' }}>
-        <img src={result.dataUrl} alt={`Verre candidat ${num}`} />
+        <img src={result.dataUrl} alt={`Verre ${result.name}`} />
         <svg
           className="player-result-photo-overlay"
           width="100%"
@@ -100,13 +118,13 @@ function PlayerCard({ num, result, isWinner, barRef }) {
         {isWinner && <div className="winner-crown">👑</div>}
       </div>
 
-      <div className="player-result-name">Candidat {num}</div>
+      <div className="player-result-name">{result.name}</div>
+      <div className="player-result-team">{result.team}</div>
 
       <div className="player-result-score" style={{ color }}>
         {result.score}<span>/100</span>
       </div>
 
-      {/* Mini barre */}
       <div className="score-bar-track">
         <div
           ref={barRef}
@@ -116,10 +134,7 @@ function PlayerCard({ num, result, isWinner, barRef }) {
       </div>
 
       <div className="player-result-color">
-        <div
-          className="player-result-swatch"
-          style={{ background: result.hex }}
-        />
+        <div className="player-result-swatch" style={{ background: result.hex }} />
         <div className="player-result-hex">{result.hex.toUpperCase()}</div>
       </div>
     </div>
